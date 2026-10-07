@@ -1,32 +1,17 @@
-import React, { useState, useEffect } from 'react';
-
-// Data awal contoh dari Skema Firestore Gas Rental (Bagian 3)
-const INITIAL_MOTORS = [
-  {
-    id: "Mt45bRw",
-    merek_tipe: "Honda Vario 125",
-    plat_nomor: "DK 1234 AB",
-    harga_per_hari: 80000,
-    tersedia: true,
-    dibuat_pada: "1 Oktober 2026 08.00"
-  },
-  {
-    id: "Mt67kLm",
-    merek_tipe: "Yamaha NMAX 155",
-    plat_nomor: "DK 5678 CD",
-    harga_per_hari: 120000,
-    tersedia: false,
-    dibuat_pada: "1 Oktober 2026 08.30"
-  },
-  {
-    id: "Mt89xYz",
-    merek_tipe: "Honda Scoopy",
-    plat_nomor: "DK 9012 EF",
-    harga_per_hari: 75000,
-    tersedia: true,
-    dibuat_pada: "1 Oktober 2026 09.00"
-  }
-];
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from './firebase';
 
 function formatRupiah(number) {
   return new Intl.NumberFormat("id-ID", {
@@ -39,9 +24,10 @@ function formatRupiah(number) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('motor');
-  const [motorList, setMotorList] = useState(INITIAL_MOTORS);
-  const [loading, setLoading] = useState(false);
+  const [motorList, setMotorList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,13 +53,28 @@ export default function App() {
     }, 2800);
   };
 
-  // Trigger Refresh / Loading State
-  const handleRefresh = () => {
+  // Ambil daftar motor dari Firestore (PRD 5.1: orderBy merek_tipe, limit 20)
+  const loadMotor = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
-    setTimeout(() => {
+    try {
+      const q = query(collection(db, "motor"), orderBy("merek_tipe"), limit(20));
+      const snapshot = await getDocs(q);
+      setMotorList(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Data motor gagal dimuat. Periksa koneksi internet, lalu coba lagi.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMotor();
+  }, [loadMotor]);
+
+  const handleRefresh = () => {
+    loadMotor();
   };
 
   // Open Form Modal (Add)
@@ -108,16 +109,23 @@ export default function App() {
   };
 
   // Confirm Delete Action
-  const handleExecuteDelete = () => {
+  const handleExecuteDelete = async () => {
     if (!confirmDeleteMotor) return;
-    const deletedName = confirmDeleteMotor.merek_tipe;
-    setMotorList(prev => prev.filter(m => m.id !== confirmDeleteMotor.id));
-    setConfirmDeleteMotor(null);
-    showToast(`Motor "${deletedName}" berhasil dihapus.`);
+    const { id, merek_tipe } = confirmDeleteMotor;
+    try {
+      await deleteDoc(doc(db, "motor", id));
+      setConfirmDeleteMotor(null);
+      showToast(`Motor "${merek_tipe}" berhasil dihapus.`);
+      loadMotor();
+    } catch (err) {
+      console.error(err);
+      setConfirmDeleteMotor(null);
+      showToast("Motor gagal dihapus. Silakan coba lagi.");
+    }
   };
 
   // Form Submit (Tambah / Ubah)
-  const handleSubmitForm = (e) => {
+  const handleSubmitForm = async (e) => {
     e.preventDefault();
     const errors = {};
 
@@ -141,38 +149,36 @@ export default function App() {
       return;
     }
 
-    if (editingId) {
-      // Ubah Motor
-      setMotorList(prev => prev.map(m => {
-        if (m.id === editingId) {
-          return {
-            ...m,
-            merek_tipe,
-            plat_nomor,
-            harga_per_hari,
-            tersedia
-          };
-        }
-        return m;
-      }));
-      showToast(`Data motor "${merek_tipe}" berhasil diperbarui.`);
-    } else {
-      // Tambah Motor Baru
-      const newMotor = {
-        id: `Mt${Math.random().toString(36).substring(2, 7)}`,
-        merek_tipe,
-        plat_nomor,
-        harga_per_hari,
-        tersedia,
-        dibuat_pada: new Date().toLocaleDateString("id-ID", {
-          day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-        })
-      };
-      setMotorList(prev => [newMotor, ...prev]);
-      showToast(`Motor "${merek_tipe}" berhasil ditambahkan.`);
+    setSaving(true);
+    try {
+      if (editingId) {
+        // Ubah Motor
+        await updateDoc(doc(db, "motor", editingId), {
+          merek_tipe,
+          plat_nomor,
+          harga_per_hari,
+          tersedia
+        });
+        showToast(`Data motor "${merek_tipe}" berhasil diperbarui.`);
+      } else {
+        // Tambah Motor Baru
+        await addDoc(collection(db, "motor"), {
+          merek_tipe,
+          plat_nomor,
+          harga_per_hari,
+          tersedia,
+          dibuat_pada: serverTimestamp()
+        });
+        showToast(`Motor "${merek_tipe}" berhasil ditambahkan.`);
+      }
+      setIsModalOpen(false);
+      loadMotor();
+    } catch (err) {
+      console.error(err);
+      showToast("Data motor gagal disimpan. Periksa isian dan koneksi, lalu coba lagi.");
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
   return (
@@ -484,8 +490,8 @@ export default function App() {
                 >
                   Batal
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingId ? 'Simpan Perubahan' : 'Simpan Motor'}
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan Motor'}
                 </button>
               </div>
             </form>
