@@ -179,45 +179,55 @@ body {
   margin-top: 0.2rem;
 }
 
-/* ================= PLACEHOLDER CARD ================= */
-.empty-placeholder-card {
+/* ================= 3 STATES: LOADING, EMPTY, ERROR ================= */
+.state-container {
+  grid-column: 1 / -1;
   background: var(--bg-card);
   border: 2px dashed var(--border-light);
   border-radius: var(--radius-lg);
-  padding: 4rem 1.5rem;
+  padding: 3.5rem 1.5rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-subtle);
+  animation: fadeIn 0.25s ease-out;
 }
 
-.placeholder-icon {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
-  background: var(--primary-red-subtle);
-  width: 80px;
-  height: 80px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--primary-red-border);
+.state-icon {
+  font-size: 3rem;
+  margin-bottom: 0.85rem;
 }
 
-.placeholder-title {
-  font-size: 1.25rem;
+.state-title {
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text-main);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
-.placeholder-desc {
-  font-size: 0.92rem;
+.state-desc {
+  font-size: 0.88rem;
   color: var(--text-muted);
-  max-width: 480px;
-  line-height: 1.6;
+  max-width: 440px;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+/* Spinner Merah & Putih */
+.spinner {
+  width: 42px;
+  height: 42px;
+  border: 3.5px solid var(--primary-red-subtle);
+  border-top-color: var(--primary-red);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ================= BOTTOM NAVIGATION (MOBILE) ================= */

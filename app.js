@@ -1,6 +1,6 @@
 /**
  * GAS RENTAL - APLIKASI CRUD RENTAL MOTOR
- * Tahap 3: Menambahkan Tombol Ubah dan Hapus dengan Dialog Konfirmasi
+ * Tahap 4: Memasang Tiga State (Loading, Empty, dan Error State)
  * Sesuai Dokumen PRD & Skema Firestore Gas Rental
  */
 
@@ -32,11 +32,10 @@ const initialMotorData = [
   }
 ];
 
-// State lokal koleksi motor
+// State lokal
 let motorList = [...initialMotorData];
-
-// ID motor yang sedang menunggu konfirmasi hapus
 let pendingDeleteId = null;
+let isSimulatingError = false; // Flag untuk simulasi error testing
 
 // Format Rupiah
 function formatRupiah(number) {
@@ -49,12 +48,13 @@ function formatRupiah(number) {
 }
 
 // Notifikasi Toast
-function showToast(message) {
+function showToast(message, type = "success") {
   const container = document.getElementById("toastContainer");
   if (!container) return;
   const toast = document.createElement("div");
   toast.className = "toast";
-  toast.innerHTML = `<span>✅</span><span>${message}</span>`;
+  const icon = type === "success" ? "✅" : "⚠️";
+  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -64,11 +64,87 @@ function showToast(message) {
   }, 3000);
 }
 
-// Render Daftar Motor (Termasuk Tombol Ubah & Hapus)
-function renderMotorList() {
+// ================= TIGA STATE RENDERER =================
+
+// 1. Loading State
+function renderLoadingState(container, text = "Memuat armada motor...") {
+  container.innerHTML = `
+    <div class="state-container">
+      <div class="spinner"></div>
+      <h4 class="state-title">${text}</h4>
+      <p class="state-desc">Mohon tunggu sebentar, sistem sedang memuat data terbaru.</p>
+    </div>
+  `;
+}
+
+// 2. Empty State (Sesuai Acceptance Criteria PRD: "Belum ada motor" + tombol Tambah Motor)
+function renderEmptyState(container) {
+  container.innerHTML = `
+    <div class="state-container">
+      <div class="state-icon">📭</div>
+      <h4 class="state-title">Belum ada motor</h4>
+      <p class="state-desc">Belum ada armada motor yang terdaftar di garasi. Mulai tambahkan unit motor pertama sekarang.</p>
+      <button class="btn btn-primary" id="btnEmptyTambahMotor">
+        ➕ Tambah Motor
+      </button>
+    </div>
+  `;
+
+  const btn = container.querySelector("#btnEmptyTambahMotor");
+  if (btn) {
+    btn.addEventListener("click", openTambahMotor);
+  }
+}
+
+// 3. Error State (Dengan tombol Coba Lagi)
+function renderErrorState(container, errorMsg, onRetry) {
+  container.innerHTML = `
+    <div class="state-container">
+      <div class="state-icon">⚠️</div>
+      <h4 class="state-title">Terjadi Kesalahan</h4>
+      <p class="state-desc">${errorMsg || "Gagal memuat data dari server. Periksa koneksi internet Anda."}</p>
+      <button class="btn btn-secondary" id="btnErrorRetry">
+        🔄 Coba Lagi
+      </button>
+    </div>
+  `;
+
+  const retryBtn = container.querySelector("#btnErrorRetry");
+  if (retryBtn && onRetry) {
+    retryBtn.addEventListener("click", onRetry);
+  }
+}
+
+// ================= MEMUAT & MENAMPILKAN DATA =================
+
+async function fetchAndRenderMotorList() {
   const container = document.getElementById("motorListContainer");
   if (!container) return;
 
+  // 1. Tampilkan Loading State terlebih dahulu
+  renderLoadingState(container, "Memuat armada motor...");
+
+  // Simulasi waktu tunggu fetch jaringan
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // Simulasi Error State jika dipicu (misal simulasi putus koneksi)
+  if (isSimulatingError) {
+    isSimulatingError = false; // Reset setelah error ditampilkan
+    renderErrorState(
+      container,
+      "Gagal terhubung ke basis data. Pastikan koneksi internet stabil.",
+      () => fetchAndRenderMotorList()
+    );
+    return;
+  }
+
+  // 2. Jika data kosong, tampilkan Empty State
+  if (!motorList || motorList.length === 0) {
+    renderEmptyState(container);
+    return;
+  }
+
+  // 3. Tampilkan Daftar Normal
   container.innerHTML = motorList.map(item => `
     <div class="item-card" data-id="${item.id}">
       <div>
@@ -91,7 +167,6 @@ function renderMotorList() {
         </div>
       </div>
 
-      <!-- Tombol Ubah dan Hapus -->
       <div class="card-actions">
         <button class="btn btn-secondary btn-sm btn-edit-motor" data-id="${item.id}">
           ✏️ Ubah
@@ -103,19 +178,15 @@ function renderMotorList() {
     </div>
   `).join("");
 
-  // Pasang Event Listener Tombol Ubah
+  // Event Listener Ubah
   container.querySelectorAll(".btn-edit-motor").forEach(btn => {
-    btn.addEventListener("click", () => {
-      openEditMotor(btn.dataset.id);
-    });
+    btn.addEventListener("click", () => openEditMotor(btn.dataset.id));
   });
 
-  // Pasang Event Listener Tombol Hapus (Membuka Dialog Konfirmasi)
+  // Event Listener Hapus
   container.querySelectorAll(".btn-delete-motor").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      openConfirmHapus(id, name);
+      openConfirmHapus(btn.dataset.id, btn.dataset.name);
     });
   });
 }
@@ -166,7 +237,7 @@ function openEditMotor(id) {
   modal.classList.add("show");
 }
 
-// Buka Dialog Konfirmasi Hapus
+// Dialog Konfirmasi Hapus
 function openConfirmHapus(id, name) {
   pendingDeleteId = id;
   const msgEl = document.getElementById("confirmModalMessage");
@@ -177,7 +248,7 @@ function openConfirmHapus(id, name) {
   if (modal) modal.classList.add("show");
 }
 
-// Eksekusi Hapus Motor Setelah Konfirmasi
+// Eksekusi Hapus Motor
 function handleKonfirmasiHapus() {
   if (!pendingDeleteId) return;
 
@@ -186,7 +257,7 @@ function handleKonfirmasiHapus() {
   pendingDeleteId = null;
 
   closeModal("modalConfirm");
-  renderMotorList();
+  fetchAndRenderMotorList();
   showToast(`Motor "${deletedMotor ? deletedMotor.merek_tipe : ""}" berhasil dihapus.`);
 }
 
@@ -203,7 +274,7 @@ function clearErrors() {
   document.querySelectorAll(".form-error").forEach(el => el.textContent = "");
 }
 
-// Simpan Motor (Tambah Baru atau Perbarui yang Ada)
+// Simpan Motor
 function handleSimpanMotor(e) {
   e.preventDefault();
   clearErrors();
@@ -216,7 +287,6 @@ function handleSimpanMotor(e) {
 
   let hasError = false;
 
-  // Validasi sesuai Skema Firestore (Koleksi motor)
   if (!merek_tipe || merek_tipe.length < 1 || merek_tipe.length > 40) {
     document.getElementById("err-motorMerekTipe").textContent = "Merek dan tipe wajib diisi (1 sampai 40 karakter).";
     hasError = true;
@@ -246,7 +316,7 @@ function handleSimpanMotor(e) {
       showToast(`Data motor "${merek_tipe}" berhasil diperbarui!`);
     }
   } else {
-    // Mode Tambah Baru
+    // Mode Tambah
     const newMotor = {
       id: `Mt${Math.random().toString(36).substring(2, 7)}`,
       merek_tipe,
@@ -259,7 +329,7 @@ function handleSimpanMotor(e) {
     showToast(`Motor "${merek_tipe}" berhasil ditambahkan!`);
   }
 
-  renderMotorList();
+  fetchAndRenderMotorList();
   closeModal("modalMotor");
 }
 
@@ -291,10 +361,16 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => switchTab(btn.dataset.target));
   });
 
-  // Tombol Buka Modal Tambah Motor
+  // Tombol Tambah Motor
   const btnOpenTambah = document.getElementById("btnOpenTambahMotor");
   if (btnOpenTambah) {
     btnOpenTambah.addEventListener("click", openTambahMotor);
+  }
+
+  // Tombol Segarkan (Memicu Loading State)
+  const btnRefresh = document.getElementById("btnRefreshMotor");
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", () => fetchAndRenderMotorList());
   }
 
   // Tombol Konfirmasi Hapus Modal
@@ -303,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnConfirmHapus.addEventListener("click", handleKonfirmasiHapus);
   }
 
-  // Event Tutup Modal (Tombol Batal dan X)
+  // Event Tutup Modal
   document.querySelectorAll("[data-close]").forEach(btn => {
     btn.addEventListener("click", () => closeModal(btn.dataset.close));
   });
@@ -314,13 +390,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Submit Formulir Motor
+  // Submit Form
   const formMotor = document.getElementById("formMotor");
   if (formMotor) {
     formMotor.addEventListener("submit", handleSimpanMotor);
   }
 
-  // Render awal daftar motor
-  renderMotorList();
+  // Panggilan awal: memuat daftar dengan loading state
+  fetchAndRenderMotorList();
   switchTab("motor");
 });

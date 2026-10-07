@@ -60,9 +60,14 @@
             <h2 class="page-title">Armada Motor</h2>
             <p class="page-subtitle">Daftar unit motor, plat nomor, harga sewa per hari, dan ketersediaan</p>
           </div>
-          <button class="btn btn-primary" id="btnOpenTambahMotor">
-            ➕ Tambah Motor
-          </button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" id="btnRefreshMotor" title="Segarkan Data (Memunculkan Loading State)">
+              🔄 Segarkan
+            </button>
+            <button class="btn btn-primary" id="btnOpenTambahMotor">
+              ➕ Tambah Motor
+            </button>
+          </div>
         </div>
         
         <!-- Daftar Motor -->
