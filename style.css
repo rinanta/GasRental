@@ -309,6 +309,53 @@ body {
   background: var(--bg-subtle);
 }
 
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-outline-danger {
+  background: #ffffff;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.btn-outline-danger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.btn-sm {
+  padding: 0.38rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.85rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.modal-dialog-sm {
+  max-width: 400px;
+}
+
+.confirm-message {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0.5rem 0 1rem 0;
+}
+
 .page-header {
   display: flex;
   align-items: center;

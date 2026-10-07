@@ -1,7 +1,7 @@
 /**
  * GAS RENTAL - APLIKASI CRUD RENTAL MOTOR
- * Tahap 2: Daftar & Formulir Tambah untuk Koleksi Pertama (motor)
- * Sesuai Dokumen Skema Firestore Gas Rental
+ * Tahap 3: Menambahkan Tombol Ubah dan Hapus dengan Dialog Konfirmasi
+ * Sesuai Dokumen PRD & Skema Firestore Gas Rental
  */
 
 // Data contoh dari Skema Firestore Gas Rental (Bagian 3)
@@ -35,6 +35,9 @@ const initialMotorData = [
 // State lokal koleksi motor
 let motorList = [...initialMotorData];
 
+// ID motor yang sedang menunggu konfirmasi hapus
+let pendingDeleteId = null;
+
 // Format Rupiah
 function formatRupiah(number) {
   return new Intl.NumberFormat("id-ID", {
@@ -61,7 +64,7 @@ function showToast(message) {
   }, 3000);
 }
 
-// Render Daftar Motor
+// Render Daftar Motor (Termasuk Tombol Ubah & Hapus)
 function renderMotorList() {
   const container = document.getElementById("motorListContainer");
   if (!container) return;
@@ -87,8 +90,34 @@ function renderMotorList() {
           </div>
         </div>
       </div>
+
+      <!-- Tombol Ubah dan Hapus -->
+      <div class="card-actions">
+        <button class="btn btn-secondary btn-sm btn-edit-motor" data-id="${item.id}">
+          ✏️ Ubah
+        </button>
+        <button class="btn btn-outline-danger btn-sm btn-delete-motor" data-id="${item.id}" data-name="${escapeHtml(item.merek_tipe)}">
+          🗑️ Hapus
+        </button>
+      </div>
     </div>
   `).join("");
+
+  // Pasang Event Listener Tombol Ubah
+  container.querySelectorAll(".btn-edit-motor").forEach(btn => {
+    btn.addEventListener("click", () => {
+      openEditMotor(btn.dataset.id);
+    });
+  });
+
+  // Pasang Event Listener Tombol Hapus (Membuka Dialog Konfirmasi)
+  container.querySelectorAll(".btn-delete-motor").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      openConfirmHapus(id, name);
+    });
+  });
 }
 
 // Escape HTML
@@ -107,29 +136,79 @@ function openTambahMotor() {
   const modal = document.getElementById("modalMotor");
   if (!modal) return;
   
-  // Reset form
+  document.getElementById("modalMotorTitle").textContent = "Tambah Motor";
+  document.getElementById("motorId").value = "";
   document.getElementById("formMotor").reset();
   document.getElementById("motorTersedia").checked = true;
+  document.getElementById("btnSubmitMotor").textContent = "Simpan Motor";
   clearErrors();
 
   modal.classList.add("show");
+}
+
+// Buka Modal Ubah Motor
+function openEditMotor(id) {
+  const motor = motorList.find(m => m.id === id);
+  if (!motor) return;
+
+  const modal = document.getElementById("modalMotor");
+  if (!modal) return;
+
+  document.getElementById("modalMotorTitle").textContent = "Ubah Motor";
+  document.getElementById("motorId").value = motor.id;
+  document.getElementById("motorMerekTipe").value = motor.merek_tipe;
+  document.getElementById("motorPlatNomor").value = motor.plat_nomor;
+  document.getElementById("motorHargaPerHari").value = motor.harga_per_hari;
+  document.getElementById("motorTersedia").checked = Boolean(motor.tersedia);
+  document.getElementById("btnSubmitMotor").textContent = "Simpan Perubahan";
+  clearErrors();
+
+  modal.classList.add("show");
+}
+
+// Buka Dialog Konfirmasi Hapus
+function openConfirmHapus(id, name) {
+  pendingDeleteId = id;
+  const msgEl = document.getElementById("confirmModalMessage");
+  if (msgEl) {
+    msgEl.textContent = `Apakah Anda yakin ingin menghapus motor "${name}"? Tindakan ini tidak dapat dibatalkan.`;
+  }
+  const modal = document.getElementById("modalConfirm");
+  if (modal) modal.classList.add("show");
+}
+
+// Eksekusi Hapus Motor Setelah Konfirmasi
+function handleKonfirmasiHapus() {
+  if (!pendingDeleteId) return;
+
+  const deletedMotor = motorList.find(m => m.id === pendingDeleteId);
+  motorList = motorList.filter(m => m.id !== pendingDeleteId);
+  pendingDeleteId = null;
+
+  closeModal("modalConfirm");
+  renderMotorList();
+  showToast(`Motor "${deletedMotor ? deletedMotor.merek_tipe : ""}" berhasil dihapus.`);
 }
 
 // Tutup Modal
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove("show");
+  if (modalId === "modalConfirm") {
+    pendingDeleteId = null;
+  }
 }
 
 function clearErrors() {
   document.querySelectorAll(".form-error").forEach(el => el.textContent = "");
 }
 
-// Simpan Motor Baru
+// Simpan Motor (Tambah Baru atau Perbarui yang Ada)
 function handleSimpanMotor(e) {
   e.preventDefault();
   clearErrors();
 
+  const id = document.getElementById("motorId").value;
   const merek_tipe = document.getElementById("motorMerekTipe").value.trim();
   const plat_nomor = document.getElementById("motorPlatNomor").value.trim().toUpperCase();
   const harga_per_hari = parseInt(document.getElementById("motorHargaPerHari").value, 10);
@@ -153,20 +232,35 @@ function handleSimpanMotor(e) {
 
   if (hasError) return;
 
-  // Buat ID baru & Dokumen baru persis sesuai skema
-  const newMotor = {
-    id: `Mt${Math.random().toString(36).substring(2, 7)}`,
-    merek_tipe,
-    plat_nomor,
-    harga_per_hari,
-    tersedia,
-    dibuat_pada: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
-  };
+  if (id) {
+    // Mode Ubah
+    const index = motorList.findIndex(m => m.id === id);
+    if (index !== -1) {
+      motorList[index] = {
+        ...motorList[index],
+        merek_tipe,
+        plat_nomor,
+        harga_per_hari,
+        tersedia
+      };
+      showToast(`Data motor "${merek_tipe}" berhasil diperbarui!`);
+    }
+  } else {
+    // Mode Tambah Baru
+    const newMotor = {
+      id: `Mt${Math.random().toString(36).substring(2, 7)}`,
+      merek_tipe,
+      plat_nomor,
+      harga_per_hari,
+      tersedia,
+      dibuat_pada: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    };
+    motorList.unshift(newMotor);
+    showToast(`Motor "${merek_tipe}" berhasil ditambahkan!`);
+  }
 
-  motorList.unshift(newMotor);
   renderMotorList();
   closeModal("modalMotor");
-  showToast(`Motor "${merek_tipe}" berhasil ditambahkan!`);
 }
 
 // Inisialisasi saat DOM siap
@@ -197,24 +291,30 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => switchTab(btn.dataset.target));
   });
 
-  // Event Tombol Buka Modal Tambah Motor
+  // Tombol Buka Modal Tambah Motor
   const btnOpenTambah = document.getElementById("btnOpenTambahMotor");
   if (btnOpenTambah) {
     btnOpenTambah.addEventListener("click", openTambahMotor);
   }
 
-  // Event Tutup Modal
+  // Tombol Konfirmasi Hapus Modal
+  const btnConfirmHapus = document.getElementById("btnConfirmHapus");
+  if (btnConfirmHapus) {
+    btnConfirmHapus.addEventListener("click", handleKonfirmasiHapus);
+  }
+
+  // Event Tutup Modal (Tombol Batal dan X)
   document.querySelectorAll("[data-close]").forEach(btn => {
     btn.addEventListener("click", () => closeModal(btn.dataset.close));
   });
 
   document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
     backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) backdrop.classList.remove("show");
+      if (e.target === backdrop) closeModal(backdrop.id);
     });
   });
 
-  // Event Submit Formulir Motor
+  // Submit Formulir Motor
   const formMotor = document.getElementById("formMotor");
   if (formMotor) {
     formMotor.addEventListener("submit", handleSimpanMotor);
