@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#dc2626">
-  <title>Gas Rental - Aplikasi Rental Motor Harian</title>
-  <meta name="description" content="Aplikasi pengelolaan rental motor harian Gas Rental. Kelola unit motor, data penyewa, transaksi sewa, dan dasbor pendapatan.">
+  <title>Gas Rental - Rental Motor Harian</title>
+  <meta name="description" content="Aplikasi pengelolaan rental motor harian Gas Rental.">
   
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <!-- Font Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,10 +15,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- App Container -->
   <div id="app" class="app-layout">
     
-    <!-- Top Header & Navigation -->
+    <!-- ================= NAVBAR (4 MODUL SESUAI PRD) ================= -->
     <header class="navbar">
       <div class="nav-brand">
         <div class="brand-logo">
@@ -30,19 +29,9 @@
         </div>
       </div>
 
-      <!-- Mode Indicator Badge -->
-      <div class="data-mode-badge" id="dataModeBadge" title="Klik untuk cek status koneksi">
-        <span class="mode-dot"></span>
-        <span id="modeText">Memuat...</span>
-      </div>
-
-      <!-- Desktop & Tablet Navigation Menu -->
+      <!-- Navigasi Desktop & Tablet -->
       <nav class="nav-links" id="navLinks">
-        <button class="nav-btn active" data-target="dasbor">
-          <span class="nav-icon">📊</span>
-          <span>Dasbor</span>
-        </button>
-        <button class="nav-btn" data-target="motor">
+        <button class="nav-btn active" data-target="motor">
           <span class="nav-icon">🛵</span>
           <span>Motor</span>
         </button>
@@ -54,159 +43,85 @@
           <span class="nav-icon">📋</span>
           <span>Sewa</span>
         </button>
+        <button class="nav-btn" data-target="dasbor">
+          <span class="nav-icon">📊</span>
+          <span>Dasbor</span>
+        </button>
       </nav>
     </header>
 
-    <!-- Main Content Area -->
+    <!-- ================= KONTEN UTAMA (HALAMAN KOSONG TIAP MODUL) ================= -->
     <main class="main-content">
       
-      <!-- ================= MODUL 1: DASBOR ================= -->
-      <section id="view-dasbor" class="view-panel active">
+      <!-- 1. HALAMAN MODUL MOTOR -->
+      <section id="view-motor" class="view-panel active">
         <div class="page-header">
           <div>
-            <h2 class="page-title">Dasbor Ringkasan</h2>
-            <p class="page-subtitle">Pantau ketersediaan unit armada dan pendapatan usaha</p>
-          </div>
-          <button class="btn btn-secondary" id="btnRefreshDasbor">
-            🔄 Segarkan
-          </button>
-        </div>
-
-        <!-- Metric Stat Cards -->
-        <div class="stats-grid">
-          <div class="stat-card stat-available">
-            <div class="stat-icon-wrapper">🛵</div>
-            <div class="stat-content">
-              <span class="stat-label">Motor Tersedia</span>
-              <h3 class="stat-value" id="statMotorTersedia">-</h3>
-              <span class="stat-hint">Siap disewakan kepada tamu</span>
-            </div>
-          </div>
-
-          <div class="stat-card stat-rented">
-            <div class="stat-icon-wrapper">🛣️</div>
-            <div class="stat-content">
-              <span class="stat-label">Motor Disewa</span>
-              <h3 class="stat-value" id="statMotorDisewa">-</h3>
-              <span class="stat-hint">Sedang dibawa penyewa</span>
-            </div>
-          </div>
-
-          <div class="stat-card stat-revenue">
-            <div class="stat-icon-wrapper">💰</div>
-            <div class="stat-content">
-              <span class="stat-label">Pendapatan Selesai</span>
-              <h3 class="stat-value" id="statPendapatan">Rp 0</h3>
-              <span class="stat-hint" id="statPendapatanDateHint">Pada tanggal terpilih</span>
-            </div>
+            <h2 class="page-title">Modul Motor</h2>
+            <p class="page-subtitle">Daftar dan formulir motor (mengelola unit, plat nomor, harga per hari, dan ketersediaan)</p>
           </div>
         </div>
-
-        <!-- Filter Date for Revenue -->
-        <div class="filter-box">
-          <label for="filterTanggalDasbor" class="form-label">
-            <strong>Pilih Tanggal Mulai untuk Laporan Pendapatan:</strong>
-          </label>
-          <div class="input-action-row">
-            <input type="date" id="filterTanggalDasbor" class="form-input" style="max-width: 250px;">
-            <button class="btn btn-primary" id="btnTerapkanFilterDasbor">Hitung Pendapatan</button>
-          </div>
-        </div>
-
-        <!-- Section: Active Rentals -->
-        <div class="section-container">
-          <div class="section-header">
-            <h3 class="section-title">Sewa yang Sedang Berjalan</h3>
-            <span class="badge badge-info" id="countSewaBerjalan">0 unit</span>
-          </div>
-
-          <div id="dasborSewaBerjalanContainer" class="card-grid">
-            <!-- Rendered by JS: Loading / Empty / List -->
-          </div>
+        
+        <div class="empty-placeholder-card">
+          <div class="placeholder-icon">🛵</div>
+          <h3 class="placeholder-title">Halaman Modul Motor</h3>
+          <p class="placeholder-desc">Kerangka halaman siap. Di tahap berikutnya akan diisi daftar armada motor dan formulir tambah/ubah motor sesuai skema.</p>
         </div>
       </section>
 
-      <!-- ================= MODUL 2: MOTOR ================= -->
-      <section id="view-motor" class="view-panel">
-        <div class="page-header">
-          <div>
-            <h2 class="page-title">Armada Motor</h2>
-            <p class="page-subtitle">Kelola unit motor, nomor plat, harga sewa, dan status unit</p>
-          </div>
-          <button class="btn btn-primary" id="btnOpenTambahMotor">
-            ➕ Tambah Motor
-          </button>
-        </div>
-
-        <!-- Motor Container for 3-States (Loading, Empty, List, Error) -->
-        <div id="motorListContainer" class="card-grid">
-          <!-- Rendered by JS -->
-        </div>
-      </section>
-
-      <!-- ================= MODUL 3: PENYEWA ================= -->
+      <!-- 2. HALAMAN MODUL PENYEWA -->
       <section id="view-penyewa" class="view-panel">
         <div class="page-header">
           <div>
-            <h2 class="page-title">Data Penyewa</h2>
-            <p class="page-subtitle">Daftar pelanggan wisatawan, nomor WhatsApp, kota, dan jaminan</p>
-          </div>
-          <button class="btn btn-primary" id="btnOpenTambahPenyewa">
-            ➕ Tambah Penyewa
-          </button>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="filter-box">
-          <div class="search-input-wrapper">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="inputSearchPenyewa" class="form-input search-input" placeholder="Cari nama atau nomor WhatsApp penyewa...">
-            <button class="btn-clear" id="btnClearSearchPenyewa" title="Bersihkan pencarian" style="display: none;">✕</button>
+            <h2 class="page-title">Modul Penyewa</h2>
+            <p class="page-subtitle">Daftar, pencarian, dan formulir penyewa (nama, WhatsApp, asal kota, dan jenis jaminan)</p>
           </div>
         </div>
 
-        <!-- Penyewa Container for 3-States -->
-        <div id="penyewaListContainer" class="card-grid">
-          <!-- Rendered by JS -->
+        <div class="empty-placeholder-card">
+          <div class="placeholder-icon">👤</div>
+          <h3 class="placeholder-title">Halaman Modul Penyewa</h3>
+          <p class="placeholder-desc">Kerangka halaman siap. Di tahap berikutnya akan diisi kolom pencarian, daftar pelanggan, dan formulir penyewa.</p>
         </div>
       </section>
 
-      <!-- ================= MODUL 4: SEWA ================= -->
+      <!-- 3. HALAMAN MODUL SEWA -->
       <section id="view-sewa" class="view-panel">
         <div class="page-header">
           <div>
-            <h2 class="page-title">Transaksi Sewa</h2>
-            <p class="page-subtitle">Catat sewa harian, hitung otomatis, dan kelola status serah terima</p>
+            <h2 class="page-title">Modul Sewa</h2>
+            <p class="page-subtitle">Daftar, detail, formulir, dan ubah status transaksi sewa harian</p>
           </div>
-          <button class="btn btn-primary" id="btnOpenTambahSewa">
-            ➕ Buat Sewa Baru
-          </button>
         </div>
 
-        <!-- Status Filter Tabs -->
-        <div class="status-tabs" id="sewaTabs">
-          <button class="tab-btn active" data-status="semua">Semua</button>
-          <button class="tab-btn" data-status="dipesan">Dipesan</button>
-          <button class="tab-btn" data-status="berjalan">Berjalan</button>
-          <button class="tab-btn" data-status="selesai">Selesai</button>
-          <button class="tab-btn" data-status="dibatalkan">Dibatalkan</button>
+        <div class="empty-placeholder-card">
+          <div class="placeholder-icon">📋</div>
+          <h3 class="placeholder-title">Halaman Modul Sewa</h3>
+          <p class="placeholder-desc">Kerangka halaman siap. Di tahap berikutnya akan diisi tab status sewa, formulir transaksi sewa, dan tombol ubah status serah terima.</p>
+        </div>
+      </section>
+
+      <!-- 4. HALAMAN MODUL DASBOR -->
+      <section id="view-dasbor" class="view-panel">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Modul Dasbor</h2>
+            <p class="page-subtitle">Ringkasan ketersediaan armada dan pendapatan usaha</p>
+          </div>
         </div>
 
-        <!-- Sewa Container for 3-States -->
-        <div id="sewaListContainer" class="card-grid">
-          <!-- Rendered by JS -->
+        <div class="empty-placeholder-card">
+          <div class="placeholder-icon">📊</div>
+          <h3 class="placeholder-title">Halaman Modul Dasbor</h3>
+          <p class="placeholder-desc">Kerangka halaman siap. Di tahap berikutnya akan diisi kartu ringkasan unit tersedia, motor disewa, sewa berjalan, dan pendapatan.</p>
         </div>
       </section>
 
     </main>
 
-    <!-- Bottom Mobile Nav Bar -->
+    <!-- ================= BOTTOM NAVIGATION (MOBILE FRIENDLY) ================= -->
     <nav class="bottom-nav" id="bottomNav">
-      <button class="bnav-btn active" data-target="dasbor">
-        <span class="bnav-icon">📊</span>
-        <span>Dasbor</span>
-      </button>
-      <button class="bnav-btn" data-target="motor">
+      <button class="bnav-btn active" data-target="motor">
         <span class="bnav-icon">🛵</span>
         <span>Motor</span>
       </button>
@@ -218,222 +133,13 @@
         <span class="bnav-icon">📋</span>
         <span>Sewa</span>
       </button>
+      <button class="bnav-btn" data-target="dasbor">
+        <span class="bnav-icon">📊</span>
+        <span>Dasbor</span>
+      </button>
     </nav>
   </div>
 
-  <!-- ================= MODAL: MOTOR ================= -->
-  <div class="modal-backdrop" id="modalMotor" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modalMotorTitle">Tambah Motor</h3>
-        <button class="modal-close" data-close="modalMotor">&times;</button>
-      </div>
-      <form id="formMotor" novalidate>
-        <input type="hidden" id="motorId">
-        
-        <div class="form-group">
-          <label for="motorMerekTipe" class="form-label">Merek dan Tipe Motor *</label>
-          <input type="text" id="motorMerekTipe" class="form-input" placeholder="Contoh: Honda Vario 125" maxlength="40" required>
-          <small class="form-hint">Maksimal 40 karakter.</small>
-          <span class="form-error" id="err-motorMerekTipe"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="motorPlatNomor" class="form-label">Plat Nomor *</label>
-          <input type="text" id="motorPlatNomor" class="form-input text-uppercase" placeholder="Contoh: DK 1234 AB" minlength="3" maxlength="12" required>
-          <small class="form-hint">Huruf kapital, 3 sampai 12 karakter.</small>
-          <span class="form-error" id="err-motorPlatNomor"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="motorHargaPerHari" class="form-label">Harga per Hari (Rp) *</label>
-          <input type="number" id="motorHargaPerHari" class="form-input" placeholder="Contoh: 80000" min="0" step="1000" required>
-          <small class="form-hint">Angka bulat positif dalam Rupiah tanpa titik.</small>
-          <span class="form-error" id="err-motorHargaPerHari"></span>
-        </div>
-
-        <div class="form-group checkbox-group">
-          <label class="custom-checkbox-label">
-            <input type="checkbox" id="motorTersedia" checked>
-            <span class="checkbox-custom"></span>
-            <span class="checkbox-text">Unit Tersedia untuk Disewa</span>
-          </label>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-close="modalMotor">Batal</button>
-          <button type="submit" class="btn btn-primary" id="btnSubmitMotor">Simpan Motor</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: PENYEWA ================= -->
-  <div class="modal-backdrop" id="modalPenyewa" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modalPenyewaTitle">Tambah Penyewa</h3>
-        <button class="modal-close" data-close="modalPenyewa">&times;</button>
-      </div>
-      <form id="formPenyewa" novalidate>
-        <input type="hidden" id="isEditPenyewa" value="false">
-        
-        <div class="form-group">
-          <label for="penyewaNama" class="form-label">Nama Lengkap Penyewa *</label>
-          <input type="text" id="penyewaNama" class="form-input" placeholder="Contoh: Putri Lestari" maxlength="60" required>
-          <small class="form-hint">Nama penyewa, 1 sampai 60 karakter.</small>
-          <span class="form-error" id="err-penyewaNama"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="penyewaNoWhatsapp" class="form-label">Nomor WhatsApp *</label>
-          <input type="tel" id="penyewaNoWhatsapp" class="form-input" placeholder="Contoh: 085712345678" maxlength="13" required>
-          <small class="form-hint">Diawali '08', total 10 sampai 13 digit angka.</small>
-          <span class="form-error" id="err-penyewaNoWhatsapp"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="penyewaAsalKota" class="form-label">Kota Asal *</label>
-          <input type="text" id="penyewaAsalKota" class="form-input" placeholder="Contoh: Surabaya" maxlength="40" required>
-          <small class="form-hint">Kota asal penyewa, 1 sampai 40 karakter.</small>
-          <span class="form-error" id="err-penyewaAsalKota"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="penyewaJenisJaminan" class="form-label">Jenis Jaminan *</label>
-          <select id="penyewaJenisJaminan" class="form-input" required>
-            <option value="">-- Pilih Jenis Jaminan --</option>
-            <option value="KTP">KTP</option>
-            <option value="SIM">SIM</option>
-            <option value="Paspor">Paspor</option>
-          </select>
-          <small class="form-hint">Pilihan sah: KTP, SIM, atau Paspor.</small>
-          <span class="form-error" id="err-penyewaJenisJaminan"></span>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-close="modalPenyewa">Batal</button>
-          <button type="submit" class="btn btn-primary" id="btnSubmitPenyewa">Simpan Penyewa</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: SEWA ================= -->
-  <div class="modal-backdrop" id="modalSewa" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modalSewaTitle">Buat Sewa Baru</h3>
-        <button class="modal-close" data-close="modalSewa">&times;</button>
-      </div>
-      <form id="formSewa" novalidate>
-        
-        <div class="form-group">
-          <label for="sewaMotorSelect" class="form-label">Pilih Motor (Hanya yang Tersedia) *</label>
-          <select id="sewaMotorSelect" class="form-input" required>
-            <option value="">-- Pilih Unit Motor --</option>
-          </select>
-          <span class="form-error" id="err-sewaMotorSelect"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="sewaPenyewaSelect" class="form-label">Pilih Penyewa *</label>
-          <select id="sewaPenyewaSelect" class="form-input" required>
-            <option value="">-- Pilih Penyewa --</option>
-          </select>
-          <span class="form-error" id="err-sewaPenyewaSelect"></span>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-6">
-            <label for="sewaTanggalMulai" class="form-label">Tanggal Mulai Sewa *</label>
-            <input type="date" id="sewaTanggalMulai" class="form-input" required>
-            <span class="form-error" id="err-sewaTanggalMulai"></span>
-          </div>
-          <div class="form-group col-6">
-            <label for="sewaLamaHari" class="form-label">Lama Hari (1-30) *</label>
-            <input type="number" id="sewaLamaHari" class="form-input" min="1" max="30" value="1" required>
-            <span class="form-error" id="err-sewaLamaHari"></span>
-          </div>
-        </div>
-
-        <!-- Auto Calculation Card -->
-        <div class="calc-card">
-          <div class="calc-row">
-            <span>Harga per Hari:</span>
-            <strong id="sewaCalcHargaHari">Rp 0</strong>
-          </div>
-          <div class="calc-row">
-            <span>Durasi:</span>
-            <span id="sewaCalcDurasi">1 Hari</span>
-          </div>
-          <div class="calc-divider"></div>
-          <div class="calc-row calc-total">
-            <span>Total Tagihan Sewa:</span>
-            <strong id="sewaCalcTotal">Rp 0</strong>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-close="modalSewa">Batal</button>
-          <button type="submit" class="btn btn-primary" id="btnSubmitSewa">Simpan Sewa</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: KONFIRMASI HAPUS / BATAL ================= -->
-  <div class="modal-backdrop" id="modalConfirm" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-sm">
-      <div class="modal-header">
-        <h3 class="modal-title" id="confirmModalTitle">Konfirmasi Hapus</h3>
-        <button class="modal-close" data-close="modalConfirm">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p id="confirmModalMessage" class="confirm-message">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-close="modalConfirm">Batal</button>
-        <button type="button" class="btn btn-danger" id="btnConfirmAction">Ya, Hapus</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: PENGATURAN FIREBASE ================= -->
-  <div class="modal-backdrop" id="modalFirebaseConfig" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title">Konfigurasi Firebase Firestore</h3>
-        <button class="modal-close" data-close="modalFirebaseConfig">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="form-hint" style="margin-bottom: 1rem;">
-          Anda dapat memasukkan konfigurasi Firebase dari console Firebase Anda untuk menghubungkan langsung ke live Cloud Firestore, atau tetap gunakan mode simulasi <strong>Mock Data</strong> lokal.
-        </p>
-        <div class="form-group">
-          <label for="inputFirebaseConfigJson" class="form-label">Firebase Config (Format JSON atau Object):</label>
-          <textarea id="inputFirebaseConfigJson" class="form-input form-textarea" rows="8" placeholder='{
-  "apiKey": "AIzaSy...",
-  "authDomain": "gas-rental.firebaseapp.com",
-  "projectId": "gas-rental",
-  "storageBucket": "gas-rental.appspot.com",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="btnResetToMock">Gunakan Mock Data</button>
-        <button type="button" class="btn btn-primary" id="btnSaveFirebaseConfig">Hubungkan Firebase</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <!-- Scripts: Modular Firebase SDK via CDN + Main Application -->
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
