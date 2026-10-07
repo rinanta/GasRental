@@ -57,15 +57,17 @@
       <section id="view-motor" class="view-panel active">
         <div class="page-header">
           <div>
-            <h2 class="page-title">Modul Motor</h2>
-            <p class="page-subtitle">Daftar dan formulir motor (mengelola unit, plat nomor, harga per hari, dan ketersediaan)</p>
+            <h2 class="page-title">Armada Motor</h2>
+            <p class="page-subtitle">Daftar unit motor, plat nomor, harga sewa per hari, dan ketersediaan</p>
           </div>
+          <button class="btn btn-primary" id="btnOpenTambahMotor">
+            ➕ Tambah Motor
+          </button>
         </div>
         
-        <div class="empty-placeholder-card">
-          <div class="placeholder-icon">🛵</div>
-          <h3 class="placeholder-title">Halaman Modul Motor</h3>
-          <p class="placeholder-desc">Kerangka halaman siap. Di tahap berikutnya akan diisi daftar armada motor dan formulir tambah/ubah motor sesuai skema.</p>
+        <!-- Daftar Motor -->
+        <div id="motorListContainer" class="card-grid">
+          <!-- Rendered by app.js -->
         </div>
       </section>
 
@@ -139,6 +141,59 @@
       </button>
     </nav>
   </div>
+
+  <!-- ================= MODAL: FORMULIR TAMBAH MOTOR ================= -->
+  <div class="modal-backdrop" id="modalMotor" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Tambah Motor</h3>
+        <button class="modal-close" data-close="modalMotor">&times;</button>
+      </div>
+      <form id="formMotor" novalidate>
+        
+        <!-- Field 1: merek_tipe (string, 1-40) -->
+        <div class="form-group">
+          <label for="motorMerekTipe" class="form-label">Merek dan Tipe Motor *</label>
+          <input type="text" id="motorMerekTipe" class="form-input" placeholder="Contoh: Honda Vario 125" maxlength="40" required>
+          <small class="form-hint">Merek dan tipe motor, 1 sampai 40 karakter.</small>
+          <span class="form-error" id="err-motorMerekTipe"></span>
+        </div>
+
+        <!-- Field 2: plat_nomor (string, kapital, 3-12) -->
+        <div class="form-group">
+          <label for="motorPlatNomor" class="form-label">Plat Nomor *</label>
+          <input type="text" id="motorPlatNomor" class="form-input text-uppercase" placeholder="Contoh: DK 1234 AB" minlength="3" maxlength="12" required>
+          <small class="form-hint">Huruf kapital, 3 sampai 12 karakter.</small>
+          <span class="form-error" id="err-motorPlatNomor"></span>
+        </div>
+
+        <!-- Field 3: harga_per_hari (number bulat >= 0) -->
+        <div class="form-group">
+          <label for="motorHargaPerHari" class="form-label">Harga per Hari (Rp) *</label>
+          <input type="number" id="motorHargaPerHari" class="form-input" placeholder="Contoh: 80000" min="0" step="1000" required>
+          <small class="form-hint">Angka bulat minimal 0 dalam Rupiah.</small>
+          <span class="form-error" id="err-motorHargaPerHari"></span>
+        </div>
+
+        <!-- Field 4: tersedia (boolean) -->
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox-label">
+            <input type="checkbox" id="motorTersedia" checked>
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Tersedia untuk disewa</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="modalMotor">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitMotor">Simpan Motor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <script src="app.js"></script>
 </body>
