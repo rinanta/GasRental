@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // KOLEKSI: MOTOR
+    // ==========================================
+    match /motor/{motorId} {
+      allow read: if true;
+
+      allow create: if isValidMotor(request.resource.data);
+
+      allow update: if isValidMotor(request.resource.data);
+
+      allow delete: if true;
+    }
+
+    function isValidMotor(data) {
+      return data.keys().hasAll(['merek_tipe', 'plat_nomor', 'harga_per_hari', 'tersedia']) &&
+             data.merek_tipe is string &&
+             data.merek_tipe.size() >= 1 &&
+             data.merek_tipe.size() <= 40 &&
+             data.plat_nomor is string &&
+             data.plat_nomor.size() >= 3 &&
+             data.plat_nomor.size() <= 12 &&
+             data.harga_per_hari is int &&
+             data.harga_per_hari >= 0 &&
+             data.tersedia is bool;
+    }
+
+    // ==========================================
+    // KOLEKSI: PENYEWA
+    // ==========================================
+    match /penyewa/{noWhatsapp} {
+      allow read: if true;
+
+      allow create: if isValidPenyewa(request.resource.data) &&
+                       request.resource.data.no_whatsapp == noWhatsapp;
+
+      allow update: if isValidPenyewa(request.resource.data) &&
+                       request.resource.data.no_whatsapp == noWhatsapp;
+
+      allow delete: if true;
+    }
+
+    function isValidPenyewa(data) {
+      return data.keys().hasAll(['nama', 'no_whatsapp', 'asal_kota', 'jenis_jaminan']) &&
+             data.nama is string &&
+             data.nama.size() >= 1 &&
+             data.nama.size() <= 60 &&
+             data.no_whatsapp is string &&
+             data.no_whatsapp.matches('^08[0-9]{8,11}$') &&
+             data.asal_kota is string &&
+             data.asal_kota.size() >= 1 &&
+             data.asal_kota.size() <= 40 &&
+             data.jenis_jaminan in ['KTP', 'SIM', 'Paspor'];
+    }
+
+    // ==========================================
+    // KOLEKSI: SEWA
+    // ==========================================
+    match /sewa/{sewaId} {
+      allow read: if true;
+
+      // Create: Status awal wajib 'dipesan' dan total harus akurat
+      allow create: if isValidSewaCreate(request.resource.data);
+
+      // Update: Transisi status harus valid sesuai tabel alur status di PRD
+      allow update: if isValidSewaUpdate(resource.data, request.resource.data);
+
+      allow delete: if true;
+    }
+
+    function isValidSewaCreate(data) {
+      return data.keys().hasAll([
+               'motor_id', 'nama_motor', 'plat_nomor', 
+               'penyewa_id', 'nama_penyewa', 'harga_per_hari', 
+               'tanggal_mulai', 'lama_hari', 'total', 'status'
+             ]) &&
+             data.motor_id is string &&
+             data.penyewa_id is string &&
+             data.tanggal_mulai is string &&
+             data.lama_hari is int &&
+             data.lama_hari >= 1 &&
+             data.lama_hari <= 30 &&
+             data.harga_per_hari is int &&
+             data.harga_per_hari >= 0 &&
+             data.total is int &&
+             data.total == (data.harga_per_hari * data.lama_hari) &&
+             data.status == 'dipesan';
+    }
+
+    function isValidSewaUpdate(currentData, newData) {
+      return isValidStatusTransition(currentData.status, newData.status);
+    }
+
+    function isValidStatusTransition(currentStatus, nextStatus) {
+      return (currentStatus == 'dipesan' && (nextStatus == 'berjalan' || nextStatus == 'dibatalkan')) ||
+             (currentStatus == 'berjalan' && nextStatus == 'selesai') ||
+             (currentStatus == nextStatus);
+    }
+
+  }
+}
