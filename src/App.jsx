@@ -12,6 +12,9 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
+import Penyewa from './Penyewa';
+import Sewa from './Sewa';
+import Dashboard from './Dashboard';
 
 function formatRupiah(number) {
   return new Intl.NumberFormat("id-ID", {
@@ -25,6 +28,7 @@ function formatRupiah(number) {
 export default function App() {
   const [activeTab, setActiveTab] = useState('motor');
   const [motorList, setMotorList] = useState([]);
+  const [activeRentedMotorIds, setActiveRentedMotorIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -53,14 +57,29 @@ export default function App() {
     }, 2800);
   };
 
-  // Ambil daftar motor dari Firestore (PRD 5.1: orderBy merek_tipe, limit 20)
+  // Ambil daftar motor dan sinkronkan dengan data sewa aktif dari Firestore
   const loadMotor = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const q = query(collection(db, "motor"), orderBy("merek_tipe"), limit(20));
-      const snapshot = await getDocs(q);
-      setMotorList(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      const qMotor = query(collection(db, "motor"), orderBy("merek_tipe"), limit(100));
+      const [snapshotMotor, snapshotSewa] = await Promise.all([
+        getDocs(qMotor),
+        getDocs(collection(db, "sewa"))
+      ]);
+
+      // Kumpulkan ID motor yang sedang memiliki transaksi aktif / berjalan
+      const ongoingMotorIds = new Set();
+      snapshotSewa.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const status = String(data.status || '').toLowerCase().trim();
+        if ((status === 'berjalan' || status === 'aktif') && data.motor_id) {
+          ongoingMotorIds.add(data.motor_id);
+        }
+      });
+
+      setActiveRentedMotorIds(ongoingMotorIds);
+      setMotorList(snapshotMotor.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
       console.error(err);
       setErrorMessage("Data motor gagal dimuat. Periksa koneksi internet, lalu coba lagi.");
@@ -105,6 +124,11 @@ export default function App() {
 
   // Open Delete Confirmation Dialog
   const handleOpenDelete = (motor) => {
+    const isDisewa = activeRentedMotorIds.has(motor.id) || motor.tersedia === false;
+    if (isDisewa) {
+      alert(`Motor "${motor.merek_tipe}" sedang dalam transaksi sewa aktif dan tidak dapat dihapus.`);
+      return;
+    }
     setConfirmDeleteMotor(motor);
   };
 
@@ -112,6 +136,11 @@ export default function App() {
   const handleExecuteDelete = async () => {
     if (!confirmDeleteMotor) return;
     const { id, merek_tipe } = confirmDeleteMotor;
+    if (activeRentedMotorIds.has(id)) {
+      alert(`Motor "${merek_tipe}" sedang dalam transaksi sewa aktif dan tidak dapat dihapus.`);
+      setConfirmDeleteMotor(null);
+      return;
+    }
     try {
       await deleteDoc(doc(db, "motor", id));
       setConfirmDeleteMotor(null);
@@ -183,7 +212,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      
+
       {/* Top Header Navbar */}
       <header className="navbar">
         <div className="nav-brand">
@@ -195,25 +224,28 @@ export default function App() {
         </div>
 
         <nav className="nav-links">
-          <button 
+          <button
             className={`nav-btn ${activeTab === 'motor' ? 'active' : ''}`}
-            onClick={() => setActiveTab('motor')}
+            onClick={() => {
+              setActiveTab('motor');
+              loadMotor();
+            }}
           >
             Motor
           </button>
-          <button 
+          <button
             className={`nav-btn ${activeTab === 'penyewa' ? 'active' : ''}`}
             onClick={() => setActiveTab('penyewa')}
           >
             Penyewa
           </button>
-          <button 
+          <button
             className={`nav-btn ${activeTab === 'sewa' ? 'active' : ''}`}
             onClick={() => setActiveTab('sewa')}
           >
             Sewa
           </button>
-          <button 
+          <button
             className={`nav-btn ${activeTab === 'dasbor' ? 'active' : ''}`}
             onClick={() => setActiveTab('dasbor')}
           >
@@ -224,7 +256,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        
+
         {/* ================= MODUL 1: MOTOR ================= */}
         {activeTab === 'motor' && (
           <section className="view-panel active">
@@ -272,47 +304,55 @@ export default function App() {
             ) : (
               // Normal List
               <div className="motor-grid">
-                {motorList.map(item => (
-                  <div key={item.id} className="motor-card">
-                    <div>
-                      <div className="motor-card-header">
-                        <div>
-                          <h2 className="motor-card-title">{item.merek_tipe}</h2>
-                          <span className="motor-plate">{item.plat_nomor}</span>
+                {motorList.map(item => {
+                  const isDisewa = activeRentedMotorIds.has(item.id) || item.tersedia === false;
+                  return (
+                    <div key={item.id} className="motor-card">
+                      <div>
+                        <div className="motor-card-header">
+                          <div>
+                            <h2 className="motor-card-title">{item.merek_tipe}</h2>
+                            <span className="motor-plate">{item.plat_nomor}</span>
+                          </div>
+                          <span className={`status-tag ${isDisewa ? 'disewa' : 'tersedia'}`}>
+                            {isDisewa ? 'DISEWA' : 'TERSEDIA'}
+                          </span>
                         </div>
-                        <span className={`status-tag ${item.tersedia ? 'tersedia' : 'disewa'}`}>
-                          {item.tersedia ? 'Tersedia' : 'Disewa'}
-                        </span>
-                      </div>
-                      
-                      <div className="motor-meta">
-                        <div className="motor-meta-row">
-                          <span>Tarif Sewa:</span>
-                          <strong>{formatRupiah(item.harga_per_hari)} / hari</strong>
-                        </div>
-                        <div className="motor-meta-row">
-                          <span>Status Unit:</span>
-                          <span>{item.tersedia ? 'Siap Disewakan' : 'Sedang Dipinjam'}</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="motor-actions">
-                      <button 
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleOpenEdit(item)}
-                      >
-                        Ubah
-                      </button>
-                      <button 
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleOpenDelete(item)}
-                      >
-                        Hapus
-                      </button>
+                        <div className="motor-meta">
+                          <div className="motor-meta-row">
+                            <span>Tarif Sewa:</span>
+                            <strong>{formatRupiah(item.harga_per_hari)} / hari</strong>
+                          </div>
+                          <div className="motor-meta-row">
+                            <span>Status Unit:</span>
+                            <span style={{ fontWeight: isDisewa ? 700 : 500, color: isDisewa ? 'var(--primary-red)' : 'inherit' }}>
+                              {isDisewa ? 'Sedang Digunakan' : 'Siap Disewakan'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="motor-actions">
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleOpenEdit(item)}
+                        >
+                          Ubah
+                        </button>
+                        <button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={() => handleOpenDelete(item)}
+                          disabled={isDisewa}
+                          title={isDisewa ? "Motor sedang disewa dan tidak dapat dihapus" : "Hapus motor"}
+                          style={isDisewa ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
@@ -323,15 +363,10 @@ export default function App() {
           <section className="view-panel active">
             <div className="panel-header">
               <div className="panel-title-group">
-                <h1 className="panel-title">Data Penyewa</h1>
-                <p className="panel-desc">Kelola data pelanggan wisatawan, nomor WhatsApp, kota asal, dan jenis dokumen jaminan.</p>
               </div>
             </div>
 
-            <div className="empty-placeholder-card">
-              <h3 className="placeholder-title">Modul Penyewa</h3>
-              <p className="placeholder-desc">Halaman siap. Modul data penyewa akan dikembangkan pada tahap selanjutnya sesuai PRD.</p>
-            </div>
+            <Penyewa />
           </section>
         )}
 
@@ -345,53 +380,41 @@ export default function App() {
               </div>
             </div>
 
-            <div className="empty-placeholder-card">
-              <h3 className="placeholder-title">Modul Transaksi Sewa</h3>
-              <p className="placeholder-desc">Halaman siap. Modul transaksi sewa akan dikembangkan pada tahap selanjutnya sesuai PRD.</p>
-            </div>
+                    <Sewa />
           </section>
         )}
 
         {/* ================= MODUL 4: DASBOR ================= */}
         {activeTab === 'dasbor' && (
-          <section className="view-panel active">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h1 className="panel-title">Dasbor Ringkasan</h1>
-                <p className="panel-desc">Laporan ketersediaan armada aktif dan total pendapatan sewa.</p>
-              </div>
-            </div>
-
-            <div className="empty-placeholder-card">
-              <h3 className="placeholder-title">Modul Dasbor</h3>
-              <p className="placeholder-desc">Halaman siap. Dasbor ringkasan akan dikembangkan pada tahap selanjutnya sesuai PRD.</p>
-            </div>
-          </section>
+          <Dashboard />
         )}
 
       </main>
 
       {/* Navigasi Bawah Mobile */}
       <nav className="bottom-nav">
-        <button 
+        <button
           className={`bnav-btn ${activeTab === 'motor' ? 'active' : ''}`}
-          onClick={() => setActiveTab('motor')}
+          onClick={() => {
+            setActiveTab('motor');
+            loadMotor();
+          }}
         >
           Motor
         </button>
-        <button 
+        <button
           className={`bnav-btn ${activeTab === 'penyewa' ? 'active' : ''}`}
           onClick={() => setActiveTab('penyewa')}
         >
           Penyewa
         </button>
-        <button 
+        <button
           className={`bnav-btn ${activeTab === 'sewa' ? 'active' : ''}`}
           onClick={() => setActiveTab('sewa')}
         >
           Sewa
         </button>
-        <button 
+        <button
           className={`bnav-btn ${activeTab === 'dasbor' ? 'active' : ''}`}
           onClick={() => setActiveTab('dasbor')}
         >
@@ -407,21 +430,21 @@ export default function App() {
               <h3 className="modal-title">
                 {editingId ? 'Ubah Motor' : 'Tambah Motor'}
               </h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="modal-close"
                 onClick={() => setIsModalOpen(false)}
               >
                 &times;
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmitForm} noValidate>
               <div className="form-group">
                 <label className="form-label">Merek dan Tipe Motor *</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  className="form-input"
                   placeholder="Contoh: Honda Vario 125"
                   maxLength={40}
                   value={formData.merek_tipe}
@@ -436,9 +459,9 @@ export default function App() {
 
               <div className="form-group">
                 <label className="form-label">Plat Nomor Kendaraan *</label>
-                <input 
-                  type="text" 
-                  className="form-input text-uppercase" 
+                <input
+                  type="text"
+                  className="form-input text-uppercase"
                   placeholder="Contoh: DK 1234 AB"
                   minLength={3}
                   maxLength={12}
@@ -454,9 +477,9 @@ export default function App() {
 
               <div className="form-group">
                 <label className="form-label">Harga Sewa per Hari (Rp) *</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
+                <input
+                  type="number"
+                  className="form-input"
                   placeholder="Contoh: 80000"
                   min={0}
                   step={1000}
@@ -472,8 +495,8 @@ export default function App() {
 
               <div className="form-group">
                 <label className="custom-checkbox">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={formData.tersedia}
                     onChange={e => setFormData({ ...formData, tersedia: e.target.checked })}
                   />
@@ -483,8 +506,8 @@ export default function App() {
               </div>
 
               <div className="modal-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-secondary"
                   onClick={() => setIsModalOpen(false)}
                 >
@@ -505,8 +528,8 @@ export default function App() {
           <div className="modal-dialog modal-dialog-sm">
             <div className="modal-header">
               <h3 className="modal-title">Konfirmasi Hapus</h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="modal-close"
                 onClick={() => setConfirmDeleteMotor(null)}
               >
@@ -515,19 +538,19 @@ export default function App() {
             </div>
             <div className="modal-body">
               <p className="confirm-message">
-                Apakah Anda yakin ingin menghapus data motor "{confirmDeleteMotor.merek_tipe}"? Tindakan ini tidak dapat dibatalkan.
+                Apakah Anda yakin ingin menghapus data motor "{confirmDeleteMotor.merek_tipe}"?
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmDeleteMotor(null)}
               >
                 Batal
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-danger"
                 onClick={handleExecuteDelete}
               >
